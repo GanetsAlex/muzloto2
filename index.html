@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Музыкальное Лото</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  
+  <!-- PWA мета-теги -->
+  <meta name="theme-color" content="#ff4d6d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="МузЛото">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  
+  <style>
+    :root {
+      --bg: #fdfcfb;
+      --card: #ffffff;
+      --border: #d1d5db;
+      --text: #222;
+      --primary: #ff4d6d;
+      --accent: #ffd166;
+      --success: #4caf50;
+      --danger: #f44336;
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #fdfcfb, #e2d1c3);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    .hidden { display: none !important; }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      text-align: center;
+      padding: 20px 16px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      color: #fff;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(255, 77, 109, 0.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    h2 {
+      margin: 20px 0 15px;
+      color: var(--primary);
+      font-size: 22px;
+    }
+
+    h3 {
+      margin: 15px 0 10px;
+      color: #555;
+      font-size: 18px;
+    }
+
+    .section {
+      width: 95%;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 10px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 15px 0;
+      width: 100%;
+    }
+
+    .btn {
+      flex: 1;
+      min-width: 140px;
+      min-height: 50px;
+      margin: 5px;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    
+    .btn:active {
+      transform: translateY(0) scale(0.98);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .btn.secondary { 
+      background: var(--accent); 
+      color: #222; 
+    }
+    
+    .btn.success { 
+      background: var(--success); 
+      color: white; 
+    }
+    
+    .btn.danger { 
+      background: var(--danger); 
+      color: white; 
+    }
+    
+    .btn.system {
+      background: #e0e0e0;
+      color: #222;
+      font-size: 14px;
+      padding: 12px 16px;
+      min-width: 130px;
+      min-height: 44px;
+    }
+
+    /* Сворачивающийся блок */
+    .collapsible {
+      width: 100%;
+      max-width: 500px;
+      margin: 15px auto;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .collapsible-header {
+      background: linear-gradient(90deg, var(--primary), #ff7b9d);
+      color: white;
+      padding: 14px 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .collapsible-content {
+      background: white;
+      padding: 20px;
+      max-height: 500px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Загрузка файлов */
+    .file-input-wrapper {
+      width: 100%;
+      margin: 15px 0;
+    }
+
+    #fileInput {
+      width: 100%;
+      padding: 15px;
+      border: 2px dashed var(--primary);
+      border-radius: 10px;
+      background: rgba(255, 77, 109, 0.05);
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    /* Список песен */
+    #songsOutput {
+      width: 100%;
+      max-width: 500px;
+      padding: 15px;
+      margin: 10px auto;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      line-height: 1.6;
+      font-family: "Courier New", monospace;
+      min-height: 150px;
+      resize: none;
+      background: #fff;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.05);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Управление воспроизведением */
+    .play-controls {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      margin: 20px auto;
+      width: 95%;
+      max-width: 500px;
+    }
+
+    .number-input {
+      width: 80px;
+      height: 50px;
+      padding: 10px;
+      font-size: 20px;
+      text-align: center;
+      border: 2px solid var(--primary);
+      border-radius: 10px;
+      margin: 0 10px;
+      font-weight: bold;
+    }
+
+    .current-song {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--primary);
+      margin: 15px 0;
+      padding: 12px;
+      background: #fff9e6;
+      border-radius: 10px;
+      border-left: 5px solid var(--accent);
+    }
+
+    audio {
+      width: 100%;
+      margin: 20px 0;
+      border-radius: 25px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* Билет 5×3 */
+    .grid.ticket {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      grid-template-rows: repeat(3, 90px);
+      gap: 8px;
+      justify-items: center;
+      align-items: center;
+      margin: 20px auto;
+      padding: 15px;
+      width: 100%;
+      max-width: 500px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .cell {
+      background: var(--card);
+      border: 3px solid var(--primary);
+      border-radius: 10px;
+      width: 100%;
+      height: 100%;
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      user-select: none;
+    }
+    
+    .cell:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .cell:active {
+      transform: scale(0.95);
+    }
+    
+    .cell.long-text { font-size: 12px; }
+    .cell.crossed { 
+      background: linear-gradient(135deg, var(--accent), #ffde8a); 
+      text-decoration: line-through;
+      border-color: #ffb300;
+      color: #5d4037;
+    }
+
+    /* Бочонки */
+    #playedBarrels {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+      padding: 15px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+      min-height: 70px;
+    }
+
+    .barrel {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #ffb347);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 20px;
+      color: #222;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      animation: pop 0.3s ease;
+      user-select: none;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0); }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    /* Кнопки действий */
+    .center-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin: 25px 0;
+      width: 100%;
+    }
+
+    /* Уведомления */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--success);
+      color: white;
+      padding: 15px 25px;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+      z-index: 1000;
+      animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+      max-width: 300px;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    /* Адаптивность */
+    @media (max-width: 600px) {
+      h1 { font-size: 22px; padding: 18px 12px; }
+      h2 { font-size: 20px; margin: 15px 0 10px; }
+      h3 { font-size: 17px; margin: 12px 0 8px; }
+      
+      .btn { 
+        font-size: 15px; 
+        padding: 12px 16px; 
+        min-width: 120px;
+        min-height: 46px;
+      }
+      
+      .cell { 
+        font-size: 13px; 
+        padding: 6px 3px;
+      }
+      
+      .cell.long-text { font-size: 11px; }
+      
+      .grid.ticket { 
+        grid-template-rows: repeat(3, 80px);
+        gap: 6px;
+        padding: 12px;
+      }
+      
+      .barrel {
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+      }
+      
+      .number-input {
+        width: 70px;
+        height: 45px;
+        font-size: 18px;
+      }
+      
+      #songsOutput {
+        font-size: 15px;
+        padding: 12px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .grid.ticket { 
+        grid-template-rows: repeat(3, 70px);
+      }
+      
+      .cell { 
+        font-size: 12px; 
+      }
+      
+      .cell.long-text { font-size: 10px; }
+      
+      .btn { 
+        min-width: 100px;
+        padding: 10px 14px;
+      }
+    }
+
+    /* Кнопка назад */
+    .back-btn {
+      position: absolute;
+      left: 15px;
+      top: 15px;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 101;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Статистика */
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      margin: 15px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎵 Музыкальное Лото</h1>
+
+  <!-- Экран выбора роли -->
+  <div id="roleSelect" class="section">
+    <button id="hostBtn" class="btn">🎤 Я ведущий</button>
+    <button id="playerBtn" class="btn secondary">🎮 Я игрок</button>
+    
+    <div class="stats">
+      <div class="stat-item">
+        <div class="stat-value" id="totalGames">0</div>
+        <div class="stat-label">Игр сыграно</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="totalSongs">0</div>
+        <div class="stat-label">Песен загружено</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ведущий -->
+  <div id="hostSection" class="section hidden">
+    <button class="back-btn" onclick="goBack()">←</button>
+    <h2>🎤 Ведущий</h2>
+
+    <!-- Загрузка файлов -->
+    <div class="collapsible">
+      <div class="collapsible-header" onclick="toggleCollapsible('songsInputSection')">
+        <span>📁 Загрузка аудиофайлов</span>
+        <span id="songsInputArrow">▼</span>
+      </div>
+      <div id="songsInputSection" class="collapsible-content">
+        <div class="file-input-wrapper">
+          <input id="fileInput" type="file" accept="audio/*" multiple>
+        </div>
+        <div class="row">
+          <button id="prepareBtn" class="btn system">✅ Создать список</button>
+          <button id="uploadBtn" class="btn system success">☁️ Загрузить в облако</button>
+        </div>
+        <textarea id="songsOutput" readonly placeholder="Здесь появится пронумерованный список песен..."></textarea>
+      </div>
+    </div>
+
+    <!-- Управление воспроизведением -->
+    <div class="play-controls">
+      <h3>▶️ Воспроизведение</h3>
+      <div class="row">
+        <input id="songNumber" type="number" min="1" placeholder="№" class="number-input">
+        <button id="playBtn" class="btn">🎵 Играть</button>
+        <button id="stopBtn" class="btn danger">⏹ Стоп</button>
+      </div>
+      
+      <div class="current-song">
+        <strong>Сейчас играет:</strong>
+        <span id="currentTitle">—</span>
+      </div>
+      
+      <div class="row">
+        <button id="prevBtn" class="btn system">◀ Предыдущая</button>
+        <button id="nextBtn" class="btn system">Следующая ▶</button>
+      </div>
+      
+      <audio id="player" controls preload="none"></audio>
+    </div>
+
+    <!-- Сыгранные песни -->
+    <h3>🎯 Сыгранные песни</h3>
+    <div id="playedBarrels"></div>
+    
+    <div class="row">
+      <button id="clearPlayedBtn" class="btn system danger">🗑 Очистить</button>
+      <button id="autoMarkBtn" class="btn system">🎯 Авто-отметка</button>
+    </div>
+
+    <!-- Билет -->
+    <div class="center-buttons">
+      <button id="hostTicketBtn" class="btn">🎫 Создать билет</button>
+      <button id="shareTicketBtn" class="btn success" onclick="shareTicket()">📤 Поделиться</button>
+    </div>
+    <div id="hostTicketGrid" class="grid ticket"></div>
+    
+    <div class="row">
+      <button id="resetTicketBtn" class="btn system danger">🔄 Новый билет</button>
+    </div>
+  </div>
+
+  <!-- Игрок -->
+  <div id="playerSection" class="section hidden">
+    <button class="back-btn" onclick="goBack()">←</button>
+    <h2>🎮 Игрок</h2>
+    
+    <button id="getTicketBtn" class="btn">🎫 Создать билет</button>
+    <div id="ticketGrid" class="grid ticket"></div>
+    
+    <div class="center-buttons">
+      <button id="checkWinBtn" class="btn success">🏆 Проверить победу</button>
+    </div>
+    
+    <div id="playerStats" class="stats">
+      <div class="stat-item">
+        <div class="stat-value" id="markedCount">0</div>
+        <div class="stat-label">Отмечено</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="remainingCount">15</div>
+        <div class="stat-label">Осталось</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="notificationArea"></div>
+
+  <script>
+    const SERVER_URL = "https://muzloto.vercel.app";
+    
+    // Глобальные переменные
+    let files = [];
+    let songs = [];
+    let playedNumbers = [];
+    let ticketCreated = false;
+    let currentSongIndex = 0;
+    
+    // DOM элементы
+    const roleSelectEl = document.getElementById("roleSelect");
+    const hostSectionEl = document.getElementById("hostSection");
+    const playerSectionEl = document.getElementById("playerSection");
+    
+    const fileInputEl = document.getElementById("fileInput");
+    const prepareBtnEl = document.getElementById("prepareBtn");
+    const uploadBtnEl = document.getElementById("uploadBtn");
+    const songsOutputEl = document.getElementById("songsOutput");
+    
+    const songNumberEl = document.getElementById("songNumber");
+    const playBtnEl = document.getElementById("playBtn");
+    const stopBtnEl = document.getElementById("stopBtn");
+    const prevBtnEl = document.getElementById("prevBtn");
+    const nextBtnEl = document.getElementById("nextBtn");
+    const playerEl = document.getElementById("player");
+    const currentTitleEl = document.getElementById("currentTitle");
+    
+    const playedBarrelsEl = document.getElementById("playedBarrels");
+    const clearPlayedBtnEl = document.getElementById("clearPlayedBtn");
+    
+    const hostTicketBtnEl = document.getElementById("hostTicketBtn");
+    const hostTicketGridEl = document.getElementById("hostTicketGrid");
+    const resetTicketBtnEl = document.getElementById("resetTicketBtn");
+    const autoMarkBtnEl = document.getElementById("autoMarkBtn");
+    
+    const getTicketBtnEl = document.getElementById("getTicketBtn");
+    const ticketGridEl = document.getElementById("ticketGrid");
+    const checkWinBtnEl = document.getElementById("checkWinBtn");
+    
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeApp();
+      updateStats();
+    });
+    
+    // Инициализация приложения
+    function initializeApp() {
+      // Выбор роли
+      document.getElementById("hostBtn").addEventListener("click", () => {
+        roleSelectEl.classList.add("hidden");
+        hostSectionEl.classList.remove("hidden");
+        vibrate(50);
+      });
+      
+      document.getElementById("playerBtn").addEventListener("click", () => {
+        roleSelectEl.classList.add("hidden");
+        playerSectionEl.classList.remove("hidden");
+        vibrate(50);
+      });
+      
+      // Ведущий: подготовить список из файлов
+      prepareBtnEl.addEventListener("click", () => {
+        files = Array.from(fileInputEl.files || []);
+        if (!files.length) {
+          showNotification("Выберите аудиофайлы.", "warning");
+          return;
+        }
+        songs = files.map((f, i) => `${i + 1}. ${stripExt(f.name)}`);
+        songsOutputEl.value = songs.join("\n");
+        updateStats();
+        showNotification(`Список из ${songs.length} песен создан`, "success");
+        vibrate(100);
+      });
+      
+      // Ведущий: загрузить список на сервер
+      uploadBtnEl.addEventListener("click", async () => {
+        if (!songs.length) {
+          showNotification("Сначала создайте список", "warning");
+          return;
+        }
+        
+        showNotification("Загрузка на сервер...", "info");
+        try {
+          const res = await fetch(`${SERVER_URL}/api/songs`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(songs)
+          });
+          
+          if (!res.ok) throw new Error("Ошибка загрузки");
+          
+          showNotification("Список загружен на сервер!", "success");
+          vibrate(200);
+        } catch (e) {
+          console.error(e);
+          showNotification("Не удалось загрузить список", "error");
+        }
+      });
+      
+      // Воспроизведение
+      playBtnEl.addEventListener("click", () => {
+        if (!files.length) {
+          showNotification("Сначала загрузите аудиофайлы", "warning");
+          return;
+        }
+        const num = parseInt(songNumberEl.value, 10);
+        
+        if (!Number.isInteger(num) || num < 1 || num > files.length) {
+          showNotification("Неверный номер песни", "warning");
+          return;
+        }
+        
+        if (playedNumbers.includes(num)) {
+          showNotification("Эта песня уже проиграна", "info");
+          return;
+        }
+        
+        currentSongIndex = num - 1;
+        playCurrentSong();
+      });
+      
+      stopBtnEl.addEventListener("click", () => {
+        playerEl.pause();
+        playerEl.currentTime = 0;
+        showNotification("Воспроизведение остановлено", "info");
+      });
+      
+      prevBtnEl.addEventListener("click", () => {
+        if (currentSongIndex > 0) {
+          currentSongIndex--;
+          songNumberEl.value = currentSongIndex + 1;
+          playCurrentSong();
+        }
+      });
+      
+      nextBtnEl.addEventListener("click", () => {
+        if (currentSongIndex < files.length - 1) {
+          currentSongIndex++;
+          songNumberEl.value = currentSongIndex + 1;
+          playCurrentSong();
+        }
+      });
+      
+      // Очистка сыгранных
+      clearPlayedBtnEl.addEventListener("click", () => {
+        if (confirm("Очистить список сыгранных песен?")) {
+          playedNumbers = [];
+          renderPlayedBarrels();
+          showNotification("Список очищен", "info");
+        }
+      });
+      
+      // Ведущий: создать билет
+      hostTicketBtnEl.addEventListener("click", async () => {
+        if (ticketCreated) {
+          showNotification("Билет уже создан", "info");
+          return;
+        }
+        
+        const list = await fetchSongsFromServer();
+        if (!list.length && songs.length) {
+          list.push(...songs);
+        }
+        
+        if (!list.length) {
+          showNotification("Сначала загрузите список песен на сервер", "warning");
+          return;
+        }
+        
+        const unique = Array.from(new Set(list));
+        const selected = shuffle(unique).slice(0, 15);
+        renderTicket(selected, hostTicketGridEl);
+        ticketCreated = true;
+        updateStats();
+        showNotification("Билет создан!", "success");
+        vibrate(150);
+      });
+      
+      resetTicketBtnEl.addEventListener("click", () => {
+        ticketCreated = false;
+        hostTicketGridEl.innerHTML = "";
+        showNotification("Билет сброшен", "info");
+      });
+      
+      autoMarkBtnEl.addEventListener("click", () => {
+        const cells = hostTicketGridEl.querySelectorAll('.cell');
+        cells.forEach(cell => {
+          if (playedNumbers.some(num => cell.textContent.includes(num + '.'))) {
+            cell.classList.add('crossed');
+          }
+        });
+        showNotification("Авто-отметка выполнена", "success");
+      });
+      
+      // Игрок: создать билет
+      getTicketBtnEl.addEventListener("click", async () => {
+        if (ticketCreated) {
+          showNotification("Билет уже создан", "info");
+          return;
+        }
+        
+        const list = await fetchSongsFromServer();
+        if (!list.length) {
+          showNotification("Ведущий еще не загрузил список", "warning");
+          return;
+        }
+        
+        const unique = Array.from(new Set(list));
+        const selected = shuffle(unique).slice(0, 15);
+        renderTicket(selected, ticketGridEl, true);
+        ticketCreated = true;
+        showNotification("Ваш билет готов!", "success");
+        vibrate(150);
+      });
+      
+      checkWinBtnEl.addEventListener("click", () => {
+        const crossed = ticketGridEl.querySelectorAll('.cell.crossed').length;
+        if (crossed === 15) {
+          showNotification("🎉 БИНГО! Вы победили!", "success");
+          vibrate([100, 100, 100]);
+        } else {
+          showNotification(`Отмечено ${crossed} из 15 ячеек`, "info");
+        }
+      });
+    }
+    
+    // Воспроизвести текущую песню
+    function playCurrentSong() {
+      const num = currentSongIndex + 1;
+      const file = files[currentSongIndex];
+      
+      if (!file) {
+        showNotification("Файл не найден", "error");
+        return;
+      }
+      
+      const title = `${num}. ${stripExt(file.name)}`;
+      currentTitleEl.textContent = title;
+      
+      playerEl.src = URL.createObjectURL(file);
+      playerEl.play();
+      
+      if (!playedNumbers.includes(num)) {
+        playedNumbers.push(num);
+        playedNumbers.sort((a, b) => a - b);
+        renderPlayedBarrels();
+        showNotification(`Играет: ${title}`, "success");
+        vibrate(100);
+      }
+      
+      updatePlayerStats();
+    }
+    
+    // Вспомогательные функции
+    function stripExt(name) {
+      return name.replace(/\.[^/.]+$/, "");
+    }
+    
+    async function fetchSongsFromServer() {
+      try {
+        const res = await fetch(`${SERVER_URL}/api/songs`);
+        if (!res.ok) throw new Error("Ошибка получения");
+        const json = await res.json();
+        return Array.isArray(json) ? json : [];
+      } catch (e) {
+        console.error(e);
+        showNotification("Не удалось получить список с сервера", "error");
+        return [];
+      }
+    }
+    
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+    
+    function renderPlayedBarrels() {
+      playedBarrelsEl.innerHTML = "";
+      playedNumbers.forEach(n => {
+        playedBarrelsEl.appendChild(makeBarrel(n));
+      });
+      updatePlayerStats();
+    }
+    
+    function makeBarrel(num) {
+      const barrel = document.createElement("div");
+      barrel.className = "barrel";
+      barrel.textContent = num;
+      barrel.addEventListener('click', () => {
+        songNumberEl.value = num;
+        playCurrentSong();
+      });
+      return barrel;
+    }
+    
+    function renderTicket(names, gridEl, isPlayer = false) {
+      gridEl.innerHTML = "";
+      names.forEach((name, index) => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.textContent = name;
+        cell.title = name;
+        cell.dataset.index = index;
+        
+        if (name.length > 30) {
+          cell.classList.add("long-text");
+        }
+        
+        cell.addEventListener("click", () => {
+          cell.classList.toggle("crossed");
+          if (isPlayer) updatePlayerStats();
+          vibrate(30);
+        });
+        
+        gridEl.appendChild(cell);
+      });
+      
+      if (isPlayer) updatePlayerStats();
+    }
+    
+    function updatePlayerStats() {
+      if (ticketGridEl) {
+        const crossed = ticketGridEl.querySelectorAll('.cell.crossed').length;
+        const remaining = 15 - crossed;
+        
+        document.getElementById('markedCount').textContent = crossed;
+        document.getElementById('remainingCount').textContent = remaining;
+      }
+    }
+    
+    function updateStats() {
+      document.getElementById('totalSongs').textContent = songs.length;
+      document.getElementById('totalGames').textContent = ticketCreated ? 1 : 0;
+    }
+    
+    function goBack() {
+      hostSectionEl.classList.add("hidden");
+      playerSectionEl.classList.add("hidden");
+      roleSelectEl.classList.remove("hidden");
+      vibrate(50);
+    }
+    
+    function toggleCollapsible(id) {
+      const element = document.getElementById(id);
+      const arrow = document.getElementById(id.replace('Section', 'Arrow'));
+      
+      element.classList.toggle('hidden');
+      arrow.textContent = element.classList.contains('hidden') ? '▼' : '▲';
+    }
+    
+    function showNotification(message, type = "info") {
+      const notification = document.createElement("div");
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+      
+      const area = document.getElementById("notificationArea");
+      area.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+    
+    function vibrate(pattern) {
+      if (navigator.vibrate) {
+        navigator.vibrate(pattern);
+      }
+    }
+    
+    function shareTicket() {
+      if (navigator.share) {
+        navigator.share({
+          title: 'Мой билет Музыкального Лото',
+          text: 'Посмотрите мой билет для игры в Музыкальное Лото!',
+          url: window.location.href
+        });
+      } else {
+        alert('Скопируйте ссылку: ' + window.location.href);
+      }
+    }
+  </script>
+</body>
+</html>
