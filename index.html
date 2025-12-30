@@ -589,11 +589,12 @@
     </div>
     
     <div style="margin-top: 20px;">
-  <a href="admin.html" target="_blank" class="btn system">🛠 Панель администратора</a>
-  <p style="font-size: 12px; color: #666; margin-top: 5px;">
-    Пароль по умолчанию: muzloto2024
-  </p>
-</div>
+      <a href="https://muzloto.vercel.app/admin.html" target="_blank" class="btn system">🛠 Панель администратора</a>
+      <p style="font-size: 12px; color: #666; margin-top: 5px;">
+        Пароль по умолчанию: muzloto2024
+      </p>
+    </div>
+  </div>
 
   <!-- Экран комнаты (после выбора роли) -->
   <div id="roomSection" class="section hidden">
@@ -692,6 +693,8 @@
           <button id="uploadBtn" class="btn system success">☁️ Загрузить в комнату</button>
         </div>
         <textarea id="songsOutput" readonly placeholder="Здесь появится пронумерованный список песен..."></textarea>
+      </div>
+    </div>
 
     <!-- Управление воспроизведением -->
     <div class="play-controls">
@@ -1248,11 +1251,10 @@
           songsOutputEl.value = songs.join("\n");
           
           // Создаем виртуальные файлы для воспроизведения
-          // В реальном приложении нужно хранить реальные файлы или ссылки
           files = songs.map((song, i) => {
             return {
               name: song.replace(/^\d+\.\s*/, '') + '.mp3',
-              // В реальном приложении здесь должен быть Blob или URL
+              lastModified: Date.now() + i
             };
           });
           
@@ -1290,16 +1292,14 @@
       const title = songs[currentSongIndex] || `${num}. ${stripExt(file.name)}`;
       currentTitleEl.textContent = title;
       
-      // Создаем URL для файла
-      if (file instanceof File || file instanceof Blob) {
-        // Если это реальный файл
-        playerEl.src = URL.createObjectURL(file);
-      } else if (file.url) {
-        // Если есть URL
-        playerEl.src = file.url;
+      // Используем реальные файлы из input
+      if (fileInputEl.files && fileInputEl.files[currentSongIndex]) {
+        // Если есть реальный файл
+        const realFile = fileInputEl.files[currentSongIndex];
+        playerEl.src = URL.createObjectURL(realFile);
       } else {
-        // Для демонстрации - используем заглушку ТОЛЬКО если нет реальных файлов
-        showNotification("Файл не загружен. Используйте реальные аудиофайлы.", "warning");
+        // Если нет реального файла, показываем уведомление
+        showNotification("Загрузите аудиофайлы для воспроизведения", "warning");
         return;
       }
       
@@ -1563,5 +1563,3 @@
   </script>
 </body>
 </html>
-
-
