@@ -561,10 +561,6 @@
       color: white;
     }
     
-    .player-badge.host::before {
-      content: "👑 ";
-    }
-    
     .divider {
       margin: 30px 0;
       text-align: center;
@@ -593,9 +589,11 @@
     </div>
     
     <div style="margin-top: 20px;">
-      <a href="https://muzloto.vercel.app/admin.html" target="_blank" class="btn system">🛠 Панель администратора</a>
-    </div>
-  </div>
+  <a href="admin.html" target="_blank" class="btn system">🛠 Панель администратора</a>
+  <p style="font-size: 12px; color: #666; margin-top: 5px;">
+    Пароль по умолчанию: muzloto2024
+  </p>
+</div>
 
   <!-- Экран комнаты (после выбора роли) -->
   <div id="roomSection" class="section hidden">
@@ -694,15 +692,6 @@
           <button id="uploadBtn" class="btn system success">☁️ Загрузить в комнату</button>
         </div>
         <textarea id="songsOutput" readonly placeholder="Здесь появится пронумерованный список песен..."></textarea>
-        
-        <!-- Админ функции -->
-        <div class="divider">Административные функции</div>
-        <div class="row">
-          <button onclick="adminClearServer()" class="btn system danger">🧹 Очистить сервер</button>
-          <button onclick="adminCleanupOldRooms()" class="btn system warning">🧹 Очистить старые</button>
-        </div>
-      </div>
-    </div>
 
     <!-- Управление воспроизведением -->
     <div class="play-controls">
@@ -1389,67 +1378,6 @@
     }
     
     // ============================
-    // АДМИНИСТРАТИВНЫЕ ФУНКЦИИ
-    // ============================
-    
-    async function adminClearServer() {
-      if (!isHost) {
-        showNotification("Только ведущий может очистить сервер", "warning");
-        return;
-      }
-      
-      const password = prompt("Введите пароль администратора (muzloto2024):");
-      if (!password) return;
-      
-      if (!confirm('❌ ВНИМАНИЕ!\n\nВы собираетесь удалить ВСЕ комнаты на сервере.\nВсе активные игры будут прекращены.\n\nВы уверены?')) {
-        return;
-      }
-      
-      try {
-        showNotification("Очистка сервера...", "info");
-        const response = await fetch(`${SERVER_URL}/api/admin/clear-rooms`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password })
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-          showNotification(`✅ Сервер очищен (${result.deletedCount} комнат)`, "success");
-          
-          // Если мы в комнате, выходим из нее
-          if (currentRoomCode) {
-            leaveRoom();
-          }
-        } else {
-          showNotification(result.error || "Ошибка очистки", "error");
-        }
-      } catch (error) {
-        showNotification("Ошибка соединения с сервером", "error");
-      }
-    }
-    
-    async function adminCleanupOldRooms() {
-      const password = prompt("Введите пароль администратора (muzloto2024):");
-      if (!password) return;
-      
-      try {
-        const response = await fetch(`${SERVER_URL}/api/admin/cleanup`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password })
-        });
-        
-        const result = await response.json();
-        alert(`Очищено старых комнат: ${result.deletedCount}\nОсталось комнат: ${result.remainingCount}`);
-      } catch (error) {
-        console.error("Ошибка очистки:", error);
-        showNotification("Ошибка очистки сервера", "error");
-      }
-    }
-    
-    // ============================
     // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
     // ============================
     
@@ -1635,4 +1563,5 @@
   </script>
 </body>
 </html>
+
 
