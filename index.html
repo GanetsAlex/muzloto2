@@ -560,6 +560,17 @@
       background: linear-gradient(135deg, var(--primary), #ff7b9d);
       color: white;
     }
+    
+    .player-badge.host::before {
+      content: "👑 ";
+    }
+    
+    .divider {
+      margin: 30px 0;
+      text-align: center;
+      color: #666;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -580,6 +591,10 @@
         <div class="stat-label">Песен загружено</div>
       </div>
     </div>
+    
+    <div style="margin-top: 20px;">
+      <a href="/admin.html" target="_blank" class="btn system">🛠 Панель администратора</a>
+    </div>
   </div>
 
   <!-- Экран комнаты (после выбора роли) -->
@@ -588,8 +603,8 @@
     <h2>🎪 Комната игры</h2>
     
     <div id="roomActions" class="room-info">
-      <!-- Создание комнаты -->
-      <div id="createRoomSection">
+      <!-- Для ведущего -->
+      <div id="hostRoomSection" class="hidden">
         <h3>➕ Создать новую комнату</h3>
         <input type="text" id="hostNameInput" placeholder="Ваше имя (опционально)" class="text-input">
         <div class="row">
@@ -597,10 +612,8 @@
         </div>
       </div>
       
-      <!-- Присоединение к комнате -->
-      <div style="margin: 30px 0; text-align: center; color: #666;">— или —</div>
-      
-      <div id="joinRoomSection">
+      <!-- Для игрока -->
+      <div id="playerRoomSection" class="hidden">
         <h3>🔗 Присоединиться к комнате</h3>
         <input type="text" id="playerNameInput" placeholder="Ваше имя (опционально)" class="text-input">
         <input type="text" id="roomCodeInput" placeholder="Код комнаты (например: ABC123)" class="text-input">
@@ -632,7 +645,7 @@
       
       <h4>Игроки в комнате:</h4>
       <div id="playersList" class="players-list">
-        <div class="player-badge host" id="hostBadge">Ведущий</div>
+        <div class="player-badge host">👑 Ведущий</div>
       </div>
       
       <div class="row" style="margin-top: 20px;">
@@ -681,6 +694,13 @@
           <button id="uploadBtn" class="btn system success">☁️ Загрузить в комнату</button>
         </div>
         <textarea id="songsOutput" readonly placeholder="Здесь появится пронумерованный список песен..."></textarea>
+        
+        <!-- Админ функции -->
+        <div class="divider">Административные функции</div>
+        <div class="row">
+          <button onclick="adminClearServer()" class="btn system danger">🧹 Очистить сервер</button>
+          <button onclick="adminCleanupOldRooms()" class="btn system warning">🧹 Очистить старые</button>
+        </div>
       </div>
     </div>
 
@@ -789,8 +809,8 @@
     const hostSectionEl = document.getElementById("hostSection");
     const playerSectionEl = document.getElementById("playerSection");
     
-    const createRoomSectionEl = document.getElementById("createRoomSection");
-    const joinRoomSectionEl = document.getElementById("joinRoomSection");
+    const hostRoomSectionEl = document.getElementById("hostRoomSection");
+    const playerRoomSectionEl = document.getElementById("playerRoomSection");
     const currentRoomInfoEl = document.getElementById("currentRoomInfo");
     
     const hostNameInputEl = document.getElementById("hostNameInput");
@@ -850,6 +870,9 @@
         currentRole = 'host';
         roleSelectEl.classList.add("hidden");
         roomSectionEl.classList.remove("hidden");
+        // Показываем секцию для ведущего
+        hostRoomSectionEl.classList.remove("hidden");
+        playerRoomSectionEl.classList.add("hidden");
         vibrate(50);
       });
       
@@ -857,6 +880,9 @@
         currentRole = 'player';
         roleSelectEl.classList.add("hidden");
         roomSectionEl.classList.remove("hidden");
+        // Показываем секцию для игрока
+        playerRoomSectionEl.classList.remove("hidden");
+        hostRoomSectionEl.classList.add("hidden");
         vibrate(50);
       });
       
@@ -1044,7 +1070,10 @@
       });
     }
     
-    // Функции для работы с комнатами
+    // ============================
+    // ФУНКЦИИ ДЛЯ РАБОТЫ С КОМНАТАМИ
+    // ============================
+    
     async function createRoom() {
       try {
         showNotification("Создание комнаты...", "info");
@@ -1104,8 +1133,8 @@
     
     function showRoomInfo() {
       roomCodeDisplayEl.textContent = currentRoomCode;
-      createRoomSectionEl.classList.add("hidden");
-      joinRoomSectionEl.classList.add("hidden");
+      hostRoomSectionEl.classList.add("hidden");
+      playerRoomSectionEl.classList.add("hidden");
       currentRoomInfoEl.classList.remove("hidden");
       
       // Обновляем информацию о комнате
@@ -1124,6 +1153,9 @@
           playedCountDisplayEl.textContent = roomInfo.playedCount;
           playersCountDisplayEl.textContent = roomInfo.playersCount;
           
+          // Обновляем список игроков
+          updatePlayersList(roomInfo.hostName, roomInfo.playersCount);
+          
           // Обновляем информацию в секциях ведущего/игрока
           if (isHost) {
             hostRoomCodeEl.textContent = currentRoomCode;
@@ -1140,6 +1172,19 @@
         }
       } catch (error) {
         console.error('Ошибка обновления информации о комнате:', error);
+      }
+    }
+    
+    function updatePlayersList(hostName, playersCount) {
+      const playersList = document.getElementById('playersList');
+      playersList.innerHTML = `<div class="player-badge host">👑 ${hostName || 'Ведущий'}</div>`;
+      
+      // Добавляем остальных игроков (если они есть)
+      for (let i = 2; i <= playersCount; i++) {
+        const player = document.createElement('div');
+        player.className = 'player-badge';
+        player.textContent = `👤 Игрок ${i}`;
+        playersList.appendChild(player);
       }
     }
     
@@ -1170,8 +1215,8 @@
       }
       
       currentRoomInfoEl.classList.add("hidden");
-      createRoomSectionEl.classList.remove("hidden");
-      joinRoomSectionEl.classList.remove("hidden");
+      hostRoomSectionEl.classList.remove("hidden");
+      playerRoomSectionEl.classList.remove("hidden");
       
       // Очищаем поля
       hostNameInputEl.value = '';
@@ -1199,6 +1244,10 @@
         syncPlayerPlayedNumbers();
       }
     }
+    
+    // ============================
+    // ФУНКЦИИ ДЛЯ РАБОТЫ С ПЕСНЯМИ
+    // ============================
     
     async function loadSongsFromRoom() {
       if (!currentRoomCode) return;
@@ -1238,6 +1287,56 @@
       }
       return [];
     }
+    
+    // Воспроизвести текущую песню
+    function playCurrentSong() {
+      const num = currentSongIndex + 1;
+      const file = files[currentSongIndex];
+      
+      if (!file) {
+        showNotification("Файл не найден", "error");
+        return;
+      }
+      
+      const title = songs[currentSongIndex] || `${num}. ${stripExt(file.name)}`;
+      currentTitleEl.textContent = title;
+      
+      // Создаем URL для файла
+      if (file instanceof File || file instanceof Blob) {
+        // Если это реальный файл
+        playerEl.src = URL.createObjectURL(file);
+      } else if (file.url) {
+        // Если есть URL
+        playerEl.src = file.url;
+      } else {
+        // Для демонстрации - используем заглушку ТОЛЬКО если нет реальных файлов
+        showNotification("Файл не загружен. Используйте реальные аудиофайлы.", "warning");
+        return;
+      }
+      
+      playerEl.play().catch(e => {
+        showNotification("Ошибка воспроизведения: " + e.message, "error");
+      });
+      
+      if (!playedNumbers.includes(num)) {
+        playedNumbers.push(num);
+        playedNumbers.sort((a, b) => a - b);
+        renderPlayedBarrels();
+        showNotification(`Играет: ${title}`, "success");
+        vibrate(100);
+        
+        // Синхронизируем с сервером (если ведущий)
+        if (isHost) {
+          syncPlayedNumbers();
+        }
+      }
+      
+      updatePlayerStats();
+    }
+    
+    // ============================
+    // ФУНКЦИИ СИНХРОНИЗАЦИИ
+    // ============================
     
     async function syncPlayedNumbers() {
       if (!currentRoomCode || !isHost) return;
@@ -1289,45 +1388,71 @@
       showNotification("Данные обновлены", "info");
     }
     
-    // Воспроизвести текущую песню
-    function playCurrentSong() {
-      const num = currentSongIndex + 1;
-      const file = files[currentSongIndex];
-      
-      if (!file) {
-        showNotification("Файл не найден", "error");
+    // ============================
+    // АДМИНИСТРАТИВНЫЕ ФУНКЦИИ
+    // ============================
+    
+    async function adminClearServer() {
+      if (!isHost) {
+        showNotification("Только ведущий может очистить сервер", "warning");
         return;
       }
       
-      const title = `${num}. ${stripExt(file.name)}`;
-      currentTitleEl.textContent = title;
+      const password = prompt("Введите пароль администратора (muzloto2024):");
+      if (!password) return;
       
-      // В реальном приложении здесь должен быть реальный URL или Blob
-      // playerEl.src = URL.createObjectURL(file);
-      
-      // Временно используем заглушку
-      playerEl.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
-      playerEl.play().catch(e => {
-        showNotification("Ошибка воспроизведения: " + e.message, "error");
-      });
-      
-      if (!playedNumbers.includes(num)) {
-        playedNumbers.push(num);
-        playedNumbers.sort((a, b) => a - b);
-        renderPlayedBarrels();
-        showNotification(`Играет: ${title}`, "success");
-        vibrate(100);
-        
-        // Синхронизируем с сервером (если ведущий)
-        if (isHost) {
-          syncPlayedNumbers();
-        }
+      if (!confirm('❌ ВНИМАНИЕ!\n\nВы собираетесь удалить ВСЕ комнаты на сервере.\nВсе активные игры будут прекращены.\n\nВы уверены?')) {
+        return;
       }
       
-      updatePlayerStats();
+      try {
+        showNotification("Очистка сервера...", "info");
+        const response = await fetch(`${SERVER_URL}/api/admin/clear-rooms`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          showNotification(`✅ Сервер очищен (${result.deletedCount} комнат)`, "success");
+          
+          // Если мы в комнате, выходим из нее
+          if (currentRoomCode) {
+            leaveRoom();
+          }
+        } else {
+          showNotification(result.error || "Ошибка очистки", "error");
+        }
+      } catch (error) {
+        showNotification("Ошибка соединения с сервером", "error");
+      }
     }
     
-    // Вспомогательные функции
+    async function adminCleanupOldRooms() {
+      const password = prompt("Введите пароль администратора (muzloto2024):");
+      if (!password) return;
+      
+      try {
+        const response = await fetch(`${SERVER_URL}/api/admin/cleanup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        
+        const result = await response.json();
+        alert(`Очищено старых комнат: ${result.deletedCount}\nОсталось комнат: ${result.remainingCount}`);
+      } catch (error) {
+        console.error("Ошибка очистки:", error);
+        showNotification("Ошибка очистки сервера", "error");
+      }
+    }
+    
+    // ============================
+    // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+    // ============================
+    
     function stripExt(name) {
       return name.replace(/\.[^/.]+$/, "");
     }
