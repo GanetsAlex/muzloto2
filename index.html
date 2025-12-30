@@ -30,6 +30,7 @@
       --accent: #ffd166;
       --success: #4caf50;
       --danger: #f44336;
+      --info: #2196f3;
     }
 
     * {
@@ -143,6 +144,11 @@
       color: white; 
     }
     
+    .btn.info { 
+      background: var(--info); 
+      color: white; 
+    }
+    
     .btn.system {
       background: #e0e0e0;
       color: #222;
@@ -239,6 +245,15 @@
       font-weight: bold;
     }
 
+    .text-input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 16px;
+      margin: 10px 0;
+    }
+
     .current-song {
       font-size: 18px;
       font-weight: 600;
@@ -282,7 +297,7 @@
       height: 100%;
       padding: 8px 4px;
       text-align: center;
-      font-size: 14px;
+      font-size: clamp(10px, 2vw, 14px);
       font-weight: 600;
       cursor: pointer;
       display: flex;
@@ -294,6 +309,8 @@
       overflow: hidden;
       transition: all 0.3s ease;
       user-select: none;
+      line-height: 1.2;
+      hyphens: auto;
     }
     
     .cell:hover {
@@ -305,7 +322,9 @@
       transform: scale(0.95);
     }
     
-    .cell.long-text { font-size: 12px; }
+    .cell.long-text { 
+      font-size: clamp(8px, 1.8vw, 12px); 
+    }
     .cell.crossed { 
       background: linear-gradient(135deg, var(--accent), #ffde8a); 
       text-decoration: line-through;
@@ -341,6 +360,7 @@
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       animation: pop 0.3s ease;
       user-select: none;
+      cursor: pointer;
     }
 
     @keyframes pop {
@@ -374,6 +394,10 @@
       max-width: 300px;
     }
 
+    .notification.warning { background: #ff9800; }
+    .notification.error { background: var(--danger); }
+    .notification.info { background: var(--info); }
+
     @keyframes slideIn {
       from { transform: translateX(100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
@@ -398,11 +422,11 @@
       }
       
       .cell { 
-        font-size: 13px; 
+        font-size: clamp(9px, 1.8vw, 13px); 
         padding: 6px 3px;
       }
       
-      .cell.long-text { font-size: 11px; }
+      .cell.long-text { font-size: clamp(7px, 1.5vw, 11px); }
       
       .grid.ticket { 
         grid-template-rows: repeat(3, 80px);
@@ -434,10 +458,10 @@
       }
       
       .cell { 
-        font-size: 12px; 
+        font-size: clamp(8px, 1.5vw, 12px); 
       }
       
-      .cell.long-text { font-size: 10px; }
+      .cell.long-text { font-size: clamp(6px, 1.2vw, 10px); }
       
       .btn { 
         min-width: 100px;
@@ -490,6 +514,52 @@
       color: #666;
       margin-top: 5px;
     }
+
+    /* Комната */
+    .room-info {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      margin: 20px auto;
+      width: 95%;
+      max-width: 500px;
+    }
+
+    .room-code {
+      font-family: monospace;
+      font-size: 32px;
+      font-weight: bold;
+      letter-spacing: 3px;
+      color: var(--primary);
+      background: #f0f0f0;
+      padding: 10px 20px;
+      border-radius: 10px;
+      margin: 15px 0;
+      display: inline-block;
+    }
+
+    .players-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 15px 0;
+    }
+
+    .player-badge {
+      background: linear-gradient(135deg, var(--accent), #ffb347);
+      color: #222;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .player-badge.host {
+      background: linear-gradient(135deg, var(--primary), #ff7b9d);
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -512,10 +582,89 @@
     </div>
   </div>
 
+  <!-- Экран комнаты (после выбора роли) -->
+  <div id="roomSection" class="section hidden">
+    <button class="back-btn" onclick="goBackToRoleSelect()">←</button>
+    <h2>🎪 Комната игры</h2>
+    
+    <div id="roomActions" class="room-info">
+      <!-- Создание комнаты -->
+      <div id="createRoomSection">
+        <h3>➕ Создать новую комнату</h3>
+        <input type="text" id="hostNameInput" placeholder="Ваше имя (опционально)" class="text-input">
+        <div class="row">
+          <button id="createRoomBtn" class="btn">Создать комнату</button>
+        </div>
+      </div>
+      
+      <!-- Присоединение к комнате -->
+      <div style="margin: 30px 0; text-align: center; color: #666;">— или —</div>
+      
+      <div id="joinRoomSection">
+        <h3>🔗 Присоединиться к комнате</h3>
+        <input type="text" id="playerNameInput" placeholder="Ваше имя (опционально)" class="text-input">
+        <input type="text" id="roomCodeInput" placeholder="Код комнаты (например: ABC123)" class="text-input">
+        <div class="row">
+          <button id="joinRoomBtn" class="btn secondary">Присоединиться</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Информация о текущей комнате -->
+    <div id="currentRoomInfo" class="room-info hidden">
+      <h3>Текущая комната</h3>
+      <div class="room-code" id="roomCodeDisplay">---</div>
+      
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value" id="songsCountDisplay">0</div>
+          <div class="stat-label">Песен</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="playedCountDisplay">0</div>
+          <div class="stat-label">Сыграно</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="playersCountDisplay">1</div>
+          <div class="stat-label">Игроков</div>
+        </div>
+      </div>
+      
+      <h4>Игроки в комнате:</h4>
+      <div id="playersList" class="players-list">
+        <div class="player-badge host" id="hostBadge">Ведущий</div>
+      </div>
+      
+      <div class="row" style="margin-top: 20px;">
+        <button id="copyRoomCodeBtn" class="btn system">📋 Копировать код</button>
+        <button id="startGameBtn" class="btn success" onclick="startGame()">▶️ Начать игру</button>
+        <button id="leaveRoomBtn" class="btn system danger">🚪 Выйти</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Ведущий -->
   <div id="hostSection" class="section hidden">
-    <button class="back-btn" onclick="goBack()">←</button>
-    <h2>🎤 Ведущий</h2>
+    <button class="back-btn" onclick="goBackToRoom()">←</button>
+    <h2>🎤 Ведущий <small>(комната: <span id="hostRoomCode">---</span>)</small></h2>
+
+    <!-- Информация о комнате -->
+    <div class="room-info">
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value" id="hostSongsCount">0</div>
+          <div class="stat-label">Песен</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="hostPlayersCount">1</div>
+          <div class="stat-label">Игроков</div>
+        </div>
+        <div class="stat-item">
+          <button id="syncRoomBtn" class="btn system" onclick="syncRoomData()">🔄 Синхр.</button>
+          <div class="stat-label">Комната</div>
+        </div>
+      </div>
+    </div>
 
     <!-- Загрузка файлов -->
     <div class="collapsible">
@@ -529,7 +678,7 @@
         </div>
         <div class="row">
           <button id="prepareBtn" class="btn system">✅ Создать список</button>
-          <button id="uploadBtn" class="btn system success">☁️ Загрузить в облако</button>
+          <button id="uploadBtn" class="btn system success">☁️ Загрузить в комнату</button>
         </div>
         <textarea id="songsOutput" readonly placeholder="Здесь появится пронумерованный список песен..."></textarea>
       </div>
@@ -541,17 +690,11 @@
       <div class="row">
         <input id="songNumber" type="number" min="1" placeholder="№" class="number-input">
         <button id="playBtn" class="btn">🎵 Играть</button>
-        <button id="stopBtn" class="btn danger">⏹ Стоп</button>
       </div>
       
       <div class="current-song">
         <strong>Сейчас играет:</strong>
         <span id="currentTitle">—</span>
-      </div>
-      
-      <div class="row">
-        <button id="prevBtn" class="btn system">◀ Предыдущая</button>
-        <button id="nextBtn" class="btn system">Следующая ▶</button>
       </div>
       
       <audio id="player" controls preload="none"></audio>
@@ -564,6 +707,7 @@
     <div class="row">
       <button id="clearPlayedBtn" class="btn system danger">🗑 Очистить</button>
       <button id="autoMarkBtn" class="btn system">🎯 Авто-отметка</button>
+      <button id="syncPlayedBtn" class="btn system info" onclick="syncPlayedNumbers()">🔄 Синхр.</button>
     </div>
 
     <!-- Билет -->
@@ -580,14 +724,33 @@
 
   <!-- Игрок -->
   <div id="playerSection" class="section hidden">
-    <button class="back-btn" onclick="goBack()">←</button>
-    <h2>🎮 Игрок</h2>
+    <button class="back-btn" onclick="goBackToRoom()">←</button>
+    <h2>🎮 Игрок <small>(комната: <span id="playerRoomCode">---</span>)</small></h2>
+    
+    <!-- Информация о комнате -->
+    <div class="room-info">
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value" id="playerSongsCount">0</div>
+          <div class="stat-label">Песен</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="playerPlayedCount">0</div>
+          <div class="stat-label">Сыграно</div>
+        </div>
+        <div class="stat-item">
+          <button id="playerSyncBtn" class="btn system" onclick="syncPlayerData()">🔄 Синхр.</button>
+          <div class="stat-label">Обновить</div>
+        </div>
+      </div>
+    </div>
     
     <button id="getTicketBtn" class="btn">🎫 Создать билет</button>
     <div id="ticketGrid" class="grid ticket"></div>
     
     <div class="center-buttons">
       <button id="checkWinBtn" class="btn success">🏆 Проверить победу</button>
+      <button id="autoMarkPlayerBtn" class="btn system" onclick="autoMarkPlayerTicket()">🎯 Авто-отметка</button>
     </div>
     
     <div id="playerStats" class="stats">
@@ -613,11 +776,44 @@
     let playedNumbers = [];
     let ticketCreated = false;
     let currentSongIndex = 0;
+    let currentRoomCode = null;
+    let currentRole = null; // 'host' или 'player'
+    let isHost = false;
+    let roomSyncInterval = null;
+    let playerName = '';
+    let hostName = '';
     
     // DOM элементы
     const roleSelectEl = document.getElementById("roleSelect");
+    const roomSectionEl = document.getElementById("roomSection");
     const hostSectionEl = document.getElementById("hostSection");
     const playerSectionEl = document.getElementById("playerSection");
+    
+    const createRoomSectionEl = document.getElementById("createRoomSection");
+    const joinRoomSectionEl = document.getElementById("joinRoomSection");
+    const currentRoomInfoEl = document.getElementById("currentRoomInfo");
+    
+    const hostNameInputEl = document.getElementById("hostNameInput");
+    const playerNameInputEl = document.getElementById("playerNameInput");
+    const roomCodeInputEl = document.getElementById("roomCodeInput");
+    const createRoomBtnEl = document.getElementById("createRoomBtn");
+    const joinRoomBtnEl = document.getElementById("joinRoomBtn");
+    
+    const roomCodeDisplayEl = document.getElementById("roomCodeDisplay");
+    const songsCountDisplayEl = document.getElementById("songsCountDisplay");
+    const playedCountDisplayEl = document.getElementById("playedCountDisplay");
+    const playersCountDisplayEl = document.getElementById("playersCountDisplay");
+    const playersListEl = document.getElementById("playersList");
+    const copyRoomCodeBtnEl = document.getElementById("copyRoomCodeBtn");
+    const leaveRoomBtnEl = document.getElementById("leaveRoomBtn");
+    
+    const hostRoomCodeEl = document.getElementById("hostRoomCode");
+    const hostSongsCountEl = document.getElementById("hostSongsCount");
+    const hostPlayersCountEl = document.getElementById("hostPlayersCount");
+    
+    const playerRoomCodeEl = document.getElementById("playerRoomCode");
+    const playerSongsCountEl = document.getElementById("playerSongsCount");
+    const playerPlayedCountEl = document.getElementById("playerPlayedCount");
     
     const fileInputEl = document.getElementById("fileInput");
     const prepareBtnEl = document.getElementById("prepareBtn");
@@ -626,19 +822,16 @@
     
     const songNumberEl = document.getElementById("songNumber");
     const playBtnEl = document.getElementById("playBtn");
-    const stopBtnEl = document.getElementById("stopBtn");
-    const prevBtnEl = document.getElementById("prevBtn");
-    const nextBtnEl = document.getElementById("nextBtn");
     const playerEl = document.getElementById("player");
     const currentTitleEl = document.getElementById("currentTitle");
     
     const playedBarrelsEl = document.getElementById("playedBarrels");
     const clearPlayedBtnEl = document.getElementById("clearPlayedBtn");
+    const autoMarkBtnEl = document.getElementById("autoMarkBtn");
     
     const hostTicketBtnEl = document.getElementById("hostTicketBtn");
     const hostTicketGridEl = document.getElementById("hostTicketGrid");
     const resetTicketBtnEl = document.getElementById("resetTicketBtn");
-    const autoMarkBtnEl = document.getElementById("autoMarkBtn");
     
     const getTicketBtnEl = document.getElementById("getTicketBtn");
     const ticketGridEl = document.getElementById("ticketGrid");
@@ -654,15 +847,49 @@
     function initializeApp() {
       // Выбор роли
       document.getElementById("hostBtn").addEventListener("click", () => {
+        currentRole = 'host';
         roleSelectEl.classList.add("hidden");
-        hostSectionEl.classList.remove("hidden");
+        roomSectionEl.classList.remove("hidden");
         vibrate(50);
       });
       
       document.getElementById("playerBtn").addEventListener("click", () => {
+        currentRole = 'player';
         roleSelectEl.classList.add("hidden");
-        playerSectionEl.classList.remove("hidden");
+        roomSectionEl.classList.remove("hidden");
         vibrate(50);
+      });
+      
+      // Создание комнаты
+      createRoomBtnEl.addEventListener("click", async () => {
+        hostName = hostNameInputEl.value.trim() || 'Ведущий';
+        await createRoom();
+      });
+      
+      // Присоединение к комнате
+      joinRoomBtnEl.addEventListener("click", async () => {
+        playerName = playerNameInputEl.value.trim() || '';
+        const roomCode = roomCodeInputEl.value.trim().toUpperCase();
+        
+        if (!roomCode || roomCode.length !== 6) {
+          showNotification("Введите код комнаты (6 символов)", "warning");
+          return;
+        }
+        
+        await joinRoom(roomCode);
+      });
+      
+      // Копирование кода комнаты
+      copyRoomCodeBtnEl.addEventListener("click", () => {
+        copyToClipboard(currentRoomCode);
+        showNotification("Код комнаты скопирован", "success");
+      });
+      
+      // Выход из комнаты
+      leaveRoomBtnEl.addEventListener("click", () => {
+        if (confirm("Вы уверены, что хотите выйти из комнаты?")) {
+          leaveRoom();
+        }
       });
       
       // Ведущий: подготовить список из файлов
@@ -679,16 +906,21 @@
         vibrate(100);
       });
       
-      // Ведущий: загрузить список на сервер
+      // Ведущий: загрузить список в комнату
       uploadBtnEl.addEventListener("click", async () => {
         if (!songs.length) {
           showNotification("Сначала создайте список", "warning");
           return;
         }
         
-        showNotification("Загрузка на сервер...", "info");
+        if (!currentRoomCode) {
+          showNotification("Сначала создайте или присоединитесь к комнате", "warning");
+          return;
+        }
+        
+        showNotification("Загрузка песен в комнату...", "info");
         try {
-          const res = await fetch(`${SERVER_URL}/api/songs`, {
+          const res = await fetch(`${SERVER_URL}/api/rooms/${currentRoomCode}/songs`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(songs)
@@ -696,8 +928,9 @@
           
           if (!res.ok) throw new Error("Ошибка загрузки");
           
-          showNotification("Список загружен на сервер!", "success");
+          showNotification("Песни загружены в комнату!", "success");
           vibrate(200);
+          await updateRoomInfo();
         } catch (e) {
           console.error(e);
           showNotification("Не удалось загрузить список", "error");
@@ -726,33 +959,12 @@
         playCurrentSong();
       });
       
-      stopBtnEl.addEventListener("click", () => {
-        playerEl.pause();
-        playerEl.currentTime = 0;
-        showNotification("Воспроизведение остановлено", "info");
-      });
-      
-      prevBtnEl.addEventListener("click", () => {
-        if (currentSongIndex > 0) {
-          currentSongIndex--;
-          songNumberEl.value = currentSongIndex + 1;
-          playCurrentSong();
-        }
-      });
-      
-      nextBtnEl.addEventListener("click", () => {
-        if (currentSongIndex < files.length - 1) {
-          currentSongIndex++;
-          songNumberEl.value = currentSongIndex + 1;
-          playCurrentSong();
-        }
-      });
-      
       // Очистка сыгранных
       clearPlayedBtnEl.addEventListener("click", () => {
         if (confirm("Очистить список сыгранных песен?")) {
           playedNumbers = [];
           renderPlayedBarrels();
+          syncPlayedNumbers();
           showNotification("Список очищен", "info");
         }
       });
@@ -764,13 +976,9 @@
           return;
         }
         
-        const list = await fetchSongsFromServer();
-        if (!list.length && songs.length) {
-          list.push(...songs);
-        }
-        
+        const list = await getSongsFromRoom();
         if (!list.length) {
-          showNotification("Сначала загрузите список песен на сервер", "warning");
+          showNotification("Сначала загрузите песни в комнату", "warning");
           return;
         }
         
@@ -792,8 +1000,13 @@
       autoMarkBtnEl.addEventListener("click", () => {
         const cells = hostTicketGridEl.querySelectorAll('.cell');
         cells.forEach(cell => {
-          if (playedNumbers.some(num => cell.textContent.includes(num + '.'))) {
-            cell.classList.add('crossed');
+          const cellText = cell.textContent;
+          const match = cellText.match(/^(\d+)\./);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (playedNumbers.includes(num)) {
+              cell.classList.add('crossed');
+            }
           }
         });
         showNotification("Авто-отметка выполнена", "success");
@@ -806,7 +1019,7 @@
           return;
         }
         
-        const list = await fetchSongsFromServer();
+        const list = await getSongsFromRoom();
         if (!list.length) {
           showNotification("Ведущий еще не загрузил список", "warning");
           return;
@@ -831,6 +1044,251 @@
       });
     }
     
+    // Функции для работы с комнатами
+    async function createRoom() {
+      try {
+        showNotification("Создание комнаты...", "info");
+        
+        const response = await fetch(`${SERVER_URL}/api/rooms/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            roomCode: generateRoomCode(),
+            hostName: hostName
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          currentRoomCode = data.roomCode;
+          isHost = true;
+          showRoomInfo();
+          showNotification(`Комната "${currentRoomCode}" создана!`, 'success');
+          startRoomSync();
+        } else {
+          showNotification(data.error || 'Ошибка создания комнаты', 'error');
+        }
+      } catch (error) {
+        console.error('Ошибка создания комнаты:', error);
+        showNotification('Ошибка соединения с сервером', 'error');
+      }
+    }
+    
+    async function joinRoom(roomCode) {
+      try {
+        showNotification("Присоединение к комнате...", "info");
+        
+        const response = await fetch(`${SERVER_URL}/api/rooms/${roomCode}/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerName: playerName })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          currentRoomCode = roomCode;
+          isHost = false;
+          showRoomInfo();
+          showNotification(`Вы присоединились к комнате "${roomCode}"`, 'success');
+          startRoomSync();
+        } else {
+          showNotification(data.error || 'Комната не найдена', 'error');
+        }
+      } catch (error) {
+        console.error('Ошибка присоединения к комнате:', error);
+        showNotification('Ошибка соединения с сервером', 'error');
+      }
+    }
+    
+    function showRoomInfo() {
+      roomCodeDisplayEl.textContent = currentRoomCode;
+      createRoomSectionEl.classList.add("hidden");
+      joinRoomSectionEl.classList.add("hidden");
+      currentRoomInfoEl.classList.remove("hidden");
+      
+      // Обновляем информацию о комнате
+      updateRoomInfo();
+    }
+    
+    async function updateRoomInfo() {
+      if (!currentRoomCode) return;
+      
+      try {
+        const response = await fetch(`${SERVER_URL}/api/rooms/${currentRoomCode}/info`);
+        if (response.ok) {
+          const roomInfo = await response.json();
+          
+          songsCountDisplayEl.textContent = roomInfo.songsCount;
+          playedCountDisplayEl.textContent = roomInfo.playedCount;
+          playersCountDisplayEl.textContent = roomInfo.playersCount;
+          
+          // Обновляем информацию в секциях ведущего/игрока
+          if (isHost) {
+            hostRoomCodeEl.textContent = currentRoomCode;
+            hostSongsCountEl.textContent = roomInfo.songsCount;
+            hostPlayersCountEl.textContent = roomInfo.playersCount;
+          } else {
+            playerRoomCodeEl.textContent = currentRoomCode;
+            playerSongsCountEl.textContent = roomInfo.songsCount;
+            playerPlayedCountEl.textContent = roomInfo.playedCount;
+            
+            // Синхронизируем сыгранные номера для игрока
+            await syncPlayerPlayedNumbers();
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка обновления информации о комнате:', error);
+      }
+    }
+    
+    function startRoomSync() {
+      // Очищаем предыдущий интервал
+      if (roomSyncInterval) clearInterval(roomSyncInterval);
+      
+      // Синхронизируем каждые 3 секунды
+      roomSyncInterval = setInterval(async () => {
+        if (!currentRoomCode) return;
+        
+        // Для игроков: получаем обновленные сыгранные номера
+        if (!isHost) {
+          await syncPlayerPlayedNumbers();
+        }
+        
+        // Обновляем информацию о комнате
+        await updateRoomInfo();
+      }, 3000);
+    }
+    
+    function leaveRoom() {
+      currentRoomCode = null;
+      isHost = false;
+      if (roomSyncInterval) {
+        clearInterval(roomSyncInterval);
+        roomSyncInterval = null;
+      }
+      
+      currentRoomInfoEl.classList.add("hidden");
+      createRoomSectionEl.classList.remove("hidden");
+      joinRoomSectionEl.classList.remove("hidden");
+      
+      // Очищаем поля
+      hostNameInputEl.value = '';
+      playerNameInputEl.value = '';
+      roomCodeInputEl.value = '';
+      
+      showNotification('Вы вышли из комнаты', 'info');
+    }
+    
+    function startGame() {
+      if (!currentRoomCode) {
+        showNotification("Сначала создайте или присоединитесь к комнате", "warning");
+        return;
+      }
+      
+      roomSectionEl.classList.add("hidden");
+      
+      if (isHost) {
+        hostSectionEl.classList.remove("hidden");
+        // Загружаем песни из комнаты
+        loadSongsFromRoom();
+      } else {
+        playerSectionEl.classList.remove("hidden");
+        // Загружаем сыгранные номера
+        syncPlayerPlayedNumbers();
+      }
+    }
+    
+    async function loadSongsFromRoom() {
+      if (!currentRoomCode) return;
+      
+      try {
+        const roomSongs = await getSongsFromRoom();
+        if (roomSongs.length > 0) {
+          songs = roomSongs;
+          songsOutputEl.value = songs.join("\n");
+          
+          // Создаем виртуальные файлы для воспроизведения
+          // В реальном приложении нужно хранить реальные файлы или ссылки
+          files = songs.map((song, i) => {
+            return {
+              name: song.replace(/^\d+\.\s*/, '') + '.mp3',
+              // В реальном приложении здесь должен быть Blob или URL
+            };
+          });
+          
+          showNotification(`Загружено ${songs.length} песен из комнаты`, "success");
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки песен из комнаты:', error);
+      }
+    }
+    
+    async function getSongsFromRoom() {
+      if (!currentRoomCode) return [];
+      
+      try {
+        const response = await fetch(`${SERVER_URL}/api/rooms/${currentRoomCode}/songs`);
+        if (response.ok) {
+          return await response.json();
+        }
+      } catch (error) {
+        console.error('Ошибка получения песен:', error);
+      }
+      return [];
+    }
+    
+    async function syncPlayedNumbers() {
+      if (!currentRoomCode || !isHost) return;
+      
+      try {
+        await fetch(`${SERVER_URL}/api/rooms/${currentRoomCode}/played`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(playedNumbers)
+        });
+        showNotification("Сыгранные номера синхронизированы", "success");
+      } catch (error) {
+        console.error('Ошибка синхронизации сыгранных номеров:', error);
+      }
+    }
+    
+    async function syncPlayerPlayedNumbers() {
+      if (!currentRoomCode || isHost) return;
+      
+      try {
+        const response = await fetch(`${SERVER_URL}/api/rooms/${currentRoomCode}/played`);
+        if (response.ok) {
+          const serverPlayedNumbers = await response.json();
+          
+          // Обновляем локальный список, если есть изменения
+          if (JSON.stringify(serverPlayedNumbers) !== JSON.stringify(playedNumbers)) {
+            playedNumbers = serverPlayedNumbers;
+            renderPlayedBarrels();
+            
+            // Автоматически отмечаем в билете
+            if (ticketCreated) {
+              autoMarkPlayerTicket();
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка получения сыгранных номеров:', error);
+      }
+    }
+    
+    function syncRoomData() {
+      updateRoomInfo();
+      showNotification("Данные комнаты обновлены", "info");
+    }
+    
+    function syncPlayerData() {
+      syncPlayerPlayedNumbers();
+      updateRoomInfo();
+      showNotification("Данные обновлены", "info");
+    }
+    
     // Воспроизвести текущую песню
     function playCurrentSong() {
       const num = currentSongIndex + 1;
@@ -844,8 +1302,14 @@
       const title = `${num}. ${stripExt(file.name)}`;
       currentTitleEl.textContent = title;
       
-      playerEl.src = URL.createObjectURL(file);
-      playerEl.play();
+      // В реальном приложении здесь должен быть реальный URL или Blob
+      // playerEl.src = URL.createObjectURL(file);
+      
+      // Временно используем заглушку
+      playerEl.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+      playerEl.play().catch(e => {
+        showNotification("Ошибка воспроизведения: " + e.message, "error");
+      });
       
       if (!playedNumbers.includes(num)) {
         playedNumbers.push(num);
@@ -853,6 +1317,11 @@
         renderPlayedBarrels();
         showNotification(`Играет: ${title}`, "success");
         vibrate(100);
+        
+        // Синхронизируем с сервером (если ведущий)
+        if (isHost) {
+          syncPlayedNumbers();
+        }
       }
       
       updatePlayerStats();
@@ -863,17 +1332,13 @@
       return name.replace(/\.[^/.]+$/, "");
     }
     
-    async function fetchSongsFromServer() {
-      try {
-        const res = await fetch(`${SERVER_URL}/api/songs`);
-        if (!res.ok) throw new Error("Ошибка получения");
-        const json = await res.json();
-        return Array.isArray(json) ? json : [];
-      } catch (e) {
-        console.error(e);
-        showNotification("Не удалось получить список с сервера", "error");
-        return [];
+    function generateRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let result = '';
+      for (let i = 0; i < 6; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
       }
+      return result;
     }
     
     function shuffle(arr) {
@@ -899,7 +1364,10 @@
       barrel.textContent = num;
       barrel.addEventListener('click', () => {
         songNumberEl.value = num;
-        playCurrentSong();
+        if (files.length >= num) {
+          currentSongIndex = num - 1;
+          playCurrentSong();
+        }
       });
       return barrel;
     }
@@ -909,9 +1377,14 @@
       names.forEach((name, index) => {
         const cell = document.createElement("div");
         cell.className = "cell";
-        cell.textContent = name;
-        cell.title = name;
+        
+        // Ограничиваем отображение длинных названий
+        const displayName = name.length > 50 ? name.substring(0, 47) + '...' : name;
+        cell.textContent = displayName;
+        cell.title = name; // Полное название при наведении
+        
         cell.dataset.index = index;
+        cell.dataset.fullName = name;
         
         if (name.length > 30) {
           cell.classList.add("long-text");
@@ -929,8 +1402,29 @@
       if (isPlayer) updatePlayerStats();
     }
     
+    function autoMarkPlayerTicket() {
+      if (!ticketGridEl || !ticketCreated) return;
+      
+      const cells = ticketGridEl.querySelectorAll('.cell');
+      cells.forEach(cell => {
+        const cellText = cell.dataset.fullName || cell.textContent;
+        const match = cellText.match(/^(\d+)\./);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (playedNumbers.includes(num)) {
+            cell.classList.add('crossed');
+          } else {
+            cell.classList.remove('crossed');
+          }
+        }
+      });
+      
+      updatePlayerStats();
+      showNotification("Билет автоматически отмечен", "info");
+    }
+    
     function updatePlayerStats() {
-      if (ticketGridEl) {
+      if (ticketGridEl && ticketCreated) {
         const crossed = ticketGridEl.querySelectorAll('.cell.crossed').length;
         const remaining = 15 - crossed;
         
@@ -944,10 +1438,20 @@
       document.getElementById('totalGames').textContent = ticketCreated ? 1 : 0;
     }
     
-    function goBack() {
-      hostSectionEl.classList.add("hidden");
-      playerSectionEl.classList.add("hidden");
+    function goBackToRoleSelect() {
+      leaveRoom();
+      roomSectionEl.classList.add("hidden");
       roleSelectEl.classList.remove("hidden");
+      vibrate(50);
+    }
+    
+    function goBackToRoom() {
+      if (isHost) {
+        hostSectionEl.classList.add("hidden");
+      } else {
+        playerSectionEl.classList.add("hidden");
+      }
+      roomSectionEl.classList.remove("hidden");
       vibrate(50);
     }
     
@@ -982,14 +1486,27 @@
       if (navigator.share) {
         navigator.share({
           title: 'Мой билет Музыкального Лото',
-          text: 'Посмотрите мой билет для игры в Музыкальное Лото!',
+          text: `Присоединяйтесь к игре! Код комнаты: ${currentRoomCode || 'не установлен'}`,
           url: window.location.href
         });
       } else {
-        alert('Скопируйте ссылку: ' + window.location.href);
+        const text = `Присоединяйтесь к игре в Музыкальное Лото! Код комнаты: ${currentRoomCode || 'не установлен'}\nСсылка: ${window.location.href}`;
+        copyToClipboard(text);
+        showNotification("Текст скопирован в буфер обмена", "success");
       }
+    }
+    
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).catch(() => {
+        // Fallback для старых браузеров
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      });
     }
   </script>
 </body>
-
 </html>
