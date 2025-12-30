@@ -2,18 +2,19 @@
   "name": "Музыкальное Лото",
   "short_name": "МузЛото",
   "description": "Музыкальная игра для вечеринок",
-  "start_url": "/",
+  "start_url": "/muzloto2/index.html",
+  "scope": "/muzloto2/",
   "display": "standalone",
   "background_color": "#fdfcfb",
   "theme_color": "#ff4d6d",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/muzloto2/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/muzloto2/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
