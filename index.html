@@ -560,13 +560,6 @@
       background: linear-gradient(135deg, var(--primary), #ff7b9d);
       color: white;
     }
-    
-    .divider {
-      margin: 30px 0;
-      text-align: center;
-      color: #666;
-      font-weight: bold;
-    }
   </style>
 </head>
 <body>
@@ -589,13 +582,9 @@
     </div>
     
     <div style="margin-top: 20px;">
-      <!-- АБСОЛЮТНАЯ ссылка на Vercel -->
-<a href="https://muzloto.vercel.app/admin.html" 
-   target="_blank" 
-   class="btn system">
-  🛠 Панель администратора
-</a>
+      <a href="/admin.html" target="_blank" class="btn system">🛠 Панель администратора</a>
       <p style="font-size: 12px; color: #666; margin-top: 5px;">
+        Пароль по умолчанию: muzloto2024
       </p>
     </div>
   </div>
@@ -662,7 +651,7 @@
   <!-- Ведущий -->
   <div id="hostSection" class="section hidden">
     <button class="back-btn" onclick="goBackToRoom()">←</button>
-    <h2>🎤 Ведущий <small>(комната: <span id="hostRoomCode">---</span>)</small></h2>
+    <h2>🎤 <span id="hostTitle">Ведущий</span> <small>(комната: <span id="hostRoomCode">---</span>)</small></h2>
 
     <!-- Информация о комнате -->
     <div class="room-info">
@@ -722,7 +711,7 @@
     
     <div class="row">
       <button id="clearPlayedBtn" class="btn system danger">🗑 Очистить</button>
-      <button id="syncPlayedBtn" class="btn system info" onclick="syncPlayedNumbers()">🔄 Синхр.</button>
+      <button id="autoMarkBtn" class="btn system">🎯 Авто-отметка</button>
     </div>
 
     <!-- Билет -->
@@ -740,7 +729,7 @@
   <!-- Игрок -->
   <div id="playerSection" class="section hidden">
     <button class="back-btn" onclick="goBackToRoom()">←</button>
-    <h2>🎮 Игрок <small>(комната: <span id="playerRoomCode">---</span>)</small></h2>
+    <h2>🎮 <span id="playerTitle">Игрок</span> <small>(комната: <span id="playerRoomCode">---</span>)</small></h2>
     
     <!-- Информация о комнате -->
     <div class="room-info">
@@ -753,19 +742,11 @@
           <div class="stat-value" id="playerPlayedCount">0</div>
           <div class="stat-label">Сыграно</div>
         </div>
-        <div class="stat-item">
-          <button id="playerSyncBtn" class="btn system" onclick="syncPlayerData()">🔄 Синхр.</button>
-          <div class="stat-label">Обновить</div>
-        </div>
       </div>
     </div>
     
     <button id="getTicketBtn" class="btn">🎫 Создать билет</button>
     <div id="ticketGrid" class="grid ticket"></div>
-    
-    <div class="center-buttons">
-      <button id="checkWinBtn" class="btn success">🏆 Проверить победу</button>
-    </div>
     
     <div id="playerStats" class="stats">
       <div class="stat-item">
@@ -849,7 +830,6 @@
     
     const getTicketBtnEl = document.getElementById("getTicketBtn");
     const ticketGridEl = document.getElementById("ticketGrid");
-    const checkWinBtnEl = document.getElementById("checkWinBtn");
     
     // Инициализация
     document.addEventListener('DOMContentLoaded', () => {
@@ -882,13 +862,13 @@
       
       // Создание комнаты
       createRoomBtnEl.addEventListener("click", async () => {
-        hostName = hostNameInputEl.value.trim() || 'Ведущий';
+        hostName = hostNameInputEl.value.trim() || 'Аноним';
         await createRoom();
       });
       
       // Присоединение к комнате
       joinRoomBtnEl.addEventListener("click", async () => {
-        playerName = playerNameInputEl.value.trim() || '';
+        playerName = playerNameInputEl.value.trim() || 'Аноним';
         const roomCode = roomCodeInputEl.value.trim().toUpperCase();
         
         if (!roomCode || roomCode.length !== 6) {
@@ -905,7 +885,7 @@
         showNotification("Код комнаты скопирован", "success");
       });
       
-      // Выход из комнаты
+      // Выход из комната
       leaveRoomBtnEl.addEventListener("click", () => {
         if (confirm("Вы уверены, что хотите выйти из комнаты?")) {
           leaveRoom();
@@ -1052,16 +1032,6 @@
         showNotification("Ваш билет готов!", "success");
         vibrate(150);
       });
-      
-      checkWinBtnEl.addEventListener("click", () => {
-        const crossed = ticketGridEl.querySelectorAll('.cell.crossed').length;
-        if (crossed === 15) {
-          showNotification("🎉 БИНГО! Вы победили!", "success");
-          vibrate([100, 100, 100]);
-        } else {
-          showNotification(`Отмечено ${crossed} из 15 ячеек`, "info");
-        }
-      });
     }
     
     // ============================
@@ -1155,10 +1125,16 @@
             hostRoomCodeEl.textContent = currentRoomCode;
             hostSongsCountEl.textContent = roomInfo.songsCount;
             hostPlayersCountEl.textContent = roomInfo.playersCount;
+            
+            // Обновляем заголовок ведущего
+            document.getElementById('hostTitle').textContent = `Ведущий - ${hostName || 'Аноним'}`;
           } else {
             playerRoomCodeEl.textContent = currentRoomCode;
             playerSongsCountEl.textContent = roomInfo.songsCount;
             playerPlayedCountEl.textContent = roomInfo.playedCount;
+            
+            // Обновляем заголовок игрока
+            document.getElementById('playerTitle').textContent = `Игрок - ${playerName || 'Аноним'}`;
             
             // Синхронизируем сыгранные номера для игрока
             await syncPlayerPlayedNumbers();
@@ -1230,10 +1206,14 @@
       
       if (isHost) {
         hostSectionEl.classList.remove("hidden");
+        // Устанавливаем заголовок ведущего
+        document.getElementById('hostTitle').textContent = `Ведущий - ${hostName || 'Аноним'}`;
         // Загружаем песни из комнаты
         loadSongsFromRoom();
       } else {
         playerSectionEl.classList.remove("hidden");
+        // Устанавливаем заголовок игрока
+        document.getElementById('playerTitle').textContent = `Игрок - ${playerName || 'Аноним'}`;
         // Загружаем сыгранные номера
         syncPlayerPlayedNumbers();
       }
@@ -1338,7 +1318,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(playedNumbers)
         });
-        showNotification("Сыгранные номера синхронизированы", "success");
+        // Убрали уведомление, чтобы не мешать
       } catch (error) {
         console.error('Ошибка синхронизации сыгранных номеров:', error);
       }
@@ -1356,7 +1336,6 @@
           if (JSON.stringify(serverPlayedNumbers) !== JSON.stringify(playedNumbers)) {
             playedNumbers = serverPlayedNumbers;
             renderPlayedBarrels();
-            }
           }
         }
       } catch (error) {
@@ -1367,12 +1346,6 @@
     function syncRoomData() {
       updateRoomInfo();
       showNotification("Данные комнаты обновлены", "info");
-    }
-    
-    function syncPlayerData() {
-      syncPlayerPlayedNumbers();
-      updateRoomInfo();
-      showNotification("Данные обновлены", "info");
     }
     
     // ============================
@@ -1429,15 +1402,18 @@
         const cell = document.createElement("div");
         cell.className = "cell";
         
-        // Ограничиваем отображение длинных названий
-        const displayName = name.length > 50 ? name.substring(0, 47) + '...' : name;
+        // Убираем нумерацию "1. ", "2. " и т.д.
+        const cleanName = name.replace(/^\d+\.\s*/, '');
+        const displayName = cleanName.length > 50 ? cleanName.substring(0, 47) + '...' : cleanName;
+        
         cell.textContent = displayName;
-        cell.title = name; // Полное название при наведении
+        cell.title = cleanName;
         
         cell.dataset.index = index;
-        cell.dataset.fullName = name;
+        cell.dataset.fullName = cleanName;
+        cell.dataset.originalName = name; // Сохраняем оригинал с номером
         
-        if (name.length > 30) {
+        if (cleanName.length > 30) {
           cell.classList.add("long-text");
         }
         
@@ -1451,27 +1427,6 @@
       });
       
       if (isPlayer) updatePlayerStats();
-    }
-    
-    function autoMarkPlayerTicket() {
-      if (!ticketGridEl || !ticketCreated) return;
-      
-      const cells = ticketGridEl.querySelectorAll('.cell');
-      cells.forEach(cell => {
-        const cellText = cell.dataset.fullName || cell.textContent;
-        const match = cellText.match(/^(\d+)\./);
-        if (match) {
-          const num = parseInt(match[1], 10);
-          if (playedNumbers.includes(num)) {
-            cell.classList.add('crossed');
-          } else {
-            cell.classList.remove('crossed');
-          }
-        }
-      });
-      
-      updatePlayerStats();
-      showNotification("Билет автоматически отмечен", "info");
     }
     
     function updatePlayerStats() {
@@ -1561,7 +1516,3 @@
   </script>
 </body>
 </html>
-
-
-
-
