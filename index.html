@@ -722,7 +722,6 @@
     
     <div class="row">
       <button id="clearPlayedBtn" class="btn system danger">🗑 Очистить</button>
-      <button id="autoMarkBtn" class="btn system">🎯 Авто-отметка</button>
       <button id="syncPlayedBtn" class="btn system info" onclick="syncPlayedNumbers()">🔄 Синхр.</button>
     </div>
 
@@ -766,7 +765,6 @@
     
     <div class="center-buttons">
       <button id="checkWinBtn" class="btn success">🏆 Проверить победу</button>
-      <button id="autoMarkPlayerBtn" class="btn system" onclick="autoMarkPlayerTicket()">🎯 Авто-отметка</button>
     </div>
     
     <div id="playerStats" class="stats">
@@ -1358,10 +1356,6 @@
           if (JSON.stringify(serverPlayedNumbers) !== JSON.stringify(playedNumbers)) {
             playedNumbers = serverPlayedNumbers;
             renderPlayedBarrels();
-            
-            // Автоматически отмечаем в билете
-            if (ticketCreated) {
-              autoMarkPlayerTicket();
             }
           }
         }
@@ -1567,6 +1561,7 @@
   </script>
 </body>
 </html>
+
 
 
 
